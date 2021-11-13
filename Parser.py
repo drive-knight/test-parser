@@ -2,7 +2,6 @@ import re
 import os
 import requests
 import csv
-import time
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
@@ -31,7 +30,7 @@ id = []
 
 def get_pages(lp: list):
     page = 1
-    while page < 20:
+    while page < 18:
         new_page = "https://www.detmir.ru/catalog/index/name/lego/page/{}/".format(page)
         page += 1
         lp.append(new_page)
@@ -45,11 +44,9 @@ def get_soup(lp: list):
             f.write(response.text)
             with open("html.txt", encoding='utf-8') as nf:
                 soup = BeautifulSoup(nf, 'html.parser')
-                tags = soup.find(lambda tag: tag.name == 'div' and tag.get('class') == ['n_6'])
+                tags = soup.find(lambda tag: tag.name == 'div' and tag.get('class') == ['oQ'])
 
-                #time.sleep(1)
-
-                for names in tags.find_all('p', class_='NO'):
+                for names in tags.find_all('p', class_='ND'):
                     name_re = re.sub(r'\d+$', '', *names)
                     name.append(name_re)
                     id_re = re.sub(r'\D', '', *names)
@@ -58,20 +55,18 @@ def get_soup(lp: list):
                     else:
                         id.append(id_re[-5:])
 
-                #time.sleep(1)
-
-                for p_prices in tags.find_all('p', class_='NZ'):
-                    p_price_re = re.sub(r'\D', '', *p_prices)
-                    p_price.append(p_price_re)
-
-                #time.sleep(1)
-
-                for prices in tags.find_all('span', class_='N_0'):
-                    price_re = re.sub(r'\D', '', *prices)
-                    price.append(price_re)
-
-
-                #time.sleep(1)
+                for qwerty in (tags.find_all('div', class_='NN NR') and tags.find_all('div', class_='NN')):
+                    string = str(qwerty)
+                    first, second = string[:50], string[50:]  # len(string)/2
+                    p_price_re1 = re.sub(r'\D', '', first)
+                    p_price_re2 = re.sub(r'\D', '', second)
+                    p_price_re3 = (p_price_re1 + ' ' + p_price_re2)
+                    if len(p_price_re3) > 5:
+                        p_price.append(p_price_re1)
+                        price.append(p_price_re2)
+                    if len(p_price_re3) < 6:
+                        p_price.append(p_price_re2)
+                        price.append(p_price_re1)
 
                 for links1 in tags:
                     for links2 in links1.find_all('a', href=True):
@@ -92,5 +87,3 @@ if __name__ == '__main__':
     cvs_writer(id, name, price, p_price, link)
     path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'html.txt')
     os.remove(path)
-
-
